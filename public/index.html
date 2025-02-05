@@ -8,64 +8,67 @@
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body class="container mt-4">
-    <h2 class="mb-3">🔗 Fetch and Download Files</h2>
+<h2 class="mb-3">🔗 Fetch and Download Files</h2>
 
-    <div class="mb-3">
-        <input type="text" id="urlInput" class="form-control" placeholder="Enter URL to fetch files">
-        <button class="btn btn-primary mt-2" onclick="fetchFiles()">Fetch Files</button>
-    </div>
+<div class="mb-3">
+    <input type="text" id="urlInput" class="form-control" placeholder="Enter URL to fetch files">
+    <button class="btn btn-primary mt-2" onclick="fetchFiles()">Fetch Files</button>
+</div>
 
-    <div class="mb-3" id="filterContainer"></div>
+<div class="mb-3" id="filterContainer"></div>
 
-    <form id="downloadForm">
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Select</th>
-                    <th>Filename</th>
-                    <th>Extension</th>
-                    <th>Link</th>
-                </tr>
-            </thead>
-            <tbody id="fileList"></tbody>
-        </table>
-        <button type="submit" class="btn btn-success">Download Selected Files</button>
-    </form>
+<form id="downloadForm">
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th>Select</th>
+            <th>Filename</th>
+            <th>Extension</th>
+            <th>Size</th> <!-- New Column -->
+            <th>Link</th>
+        </tr>
+        </thead>
+        <tbody id="fileList"></tbody>
+    </table>
+    <p id="fileCount" class="text-info"></p>
+    <button type="submit" class="btn btn-success">Download Selected Files</button>
+</form>
+<div id="downloadMessage" class="alert alert-info mt-3" style="display: none;"></div>
+<div class="progress mt-3" style="display: none;">
+    <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;">0%</div>
+</div>
 
-    <div class="progress mt-3" style="display: none;">
-        <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;">0%</div>
-    </div>
+<script>
+    let allFiles = [];
+    const socket = io();
 
-    <script>
-        let allFiles = [];
-        const socket = io();
+    async function fetchFiles() {
+        const url = document.getElementById("urlInput").value;
+        if (!url) return alert("Please enter a valid URL!");
 
-        async function fetchFiles() {
-            const url = document.getElementById("urlInput").value;
-            if (!url) return alert("Please enter a valid URL!");
+        const response = await fetch(`/fetch-files?url=${encodeURIComponent(url)}`);
+        allFiles = await response.json();
 
-            const response = await fetch(`/fetch-files?url=${encodeURIComponent(url)}`);
-            allFiles = await response.json();
+        const fileList = document.getElementById("fileList");
+        fileList.innerHTML = "";
 
-            const fileList = document.getElementById("fileList");
-            fileList.innerHTML = "";
+        const extensions = new Set();
 
-            const extensions = new Set();
-
-            allFiles.forEach(file => {
-                fileList.innerHTML += `
+        allFiles.forEach(file => {
+            fileList.innerHTML += `
                     <tr data-ext="${file.ext}">
                         <td><input type="checkbox" name="files" value="${file.link}"></td>
                         <td>${file.name}</td>
                         <td>${file.ext}</td>
+                        <td>${file.size}</td> <!-- New Size Column -->
                         <td><a href="${file.link}" target="_blank">${file.link}</a></td>
                     </tr>
                 `;
-                extensions.add(file.ext);
-            });
+            extensions.add(file.ext);
+        });
 
-            updateFilters([...extensions]);
-        }
+        updateFilters([...extensions]);
+    }
 
         function updateFilters(extensions) {
             const filterContainer = document.getElementById("filterContainer");
@@ -99,8 +102,8 @@
 
             const response = await fetch("/download", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ files: selectedFiles })
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({files: selectedFiles})
             });
 
             const result = await response.json();
@@ -122,6 +125,15 @@
         socket.on("progressUpdate", (data) => {
             updateProgress(data.progress);
         });
-    </script>
+
+        const messageBox = document.getElementById("downloadMessage");
+
+        socket.on("downloadMessage", (data) => {
+            messageBox.style.display = "block";
+            messageBox.textContent = data.message;
+        });
+
+        document.getElementById("fileCount").textContent = `Found ${files.length} files (${totalSizeFormatted})`;
+</script>
 </body>
 </html>
