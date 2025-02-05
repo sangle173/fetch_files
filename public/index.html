@@ -14,9 +14,10 @@
     <input type="text" id="urlInput" class="form-control" placeholder="Enter URL to fetch files">
     <button class="btn btn-primary mt-2" onclick="fetchFiles()">Fetch Files</button>
 </div>
-
-<div class="mb-3" id="filterContainer"></div>
-
+<p>Filter by:</p>
+<div class="mb-3" id="filterContainer">
+    <label><input type="checkbox" id="selectAllExtensions" checked onchange="toggleAllExtensions()"> <b>All</b></label>
+</div>
 <form id="downloadForm">
     <table class="table table-bordered">
         <thead>
@@ -85,13 +86,46 @@
             });
         }
 
+        // ✅ Auto-create extension checkboxes & pre-select all
+        function updateFilters(extensions) {
+            const filterContainer = document.getElementById("filterContainer");
+            filterContainer.innerHTML = `
+        <label><input type="checkbox" id="selectAllExtensions" checked onchange="toggleAllExtensions()"> <b>All</b></label>
+    `;
+
+            extensions.forEach(ext => {
+                filterContainer.innerHTML += `
+            <label class="ms-2">
+                <input type="checkbox" class="extensionCheckbox" value="${ext}" checked onchange="applyFilters()"> ${ext}
+            </label>
+        `;
+            });
+
+            applyFilters(); // Apply the default filtering
+        }
+
+// ✅ Function to toggle all extension checkboxes
+        function toggleAllExtensions() {
+            const isChecked = document.getElementById("selectAllExtensions").checked;
+            document.querySelectorAll(".extensionCheckbox").forEach(checkbox => {
+                checkbox.checked = isChecked;
+            });
+            applyFilters();
+        }
+
+// ✅ Function to apply filtering based on selected extensions
         function applyFilters() {
-            const checkedExtensions = [...document.querySelectorAll('#filterContainer input:checked')]
+            const checkedExtensions = [...document.querySelectorAll('.extensionCheckbox:checked')]
                 .map(input => input.value);
 
             document.querySelectorAll("#fileList tr").forEach(row => {
                 row.style.display = checkedExtensions.includes(row.getAttribute("data-ext")) ? "" : "none";
             });
+
+            // Update "Select All" checkbox dynamically
+            const allCheckboxes = document.querySelectorAll(".extensionCheckbox");
+            const checkedCount = document.querySelectorAll(".extensionCheckbox:checked").length;
+            document.getElementById("selectAllExtensions").checked = (checkedCount === allCheckboxes.length);
         }
 
         document.getElementById("downloadForm").addEventListener("submit", async function (event) {
