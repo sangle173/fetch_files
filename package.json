@@ -1,0 +1,22 @@
+{
+  "name": "fetch_files",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "axios": "^1.7.9",
+    "cheerio": "^1.0.0",
+    "express": "^4.21.2",
+    "fs-extra": "^11.3.0",
+    "multer": "^1.4.5-lts.1",
+    "path": "^0.12.7",
+    "socket.io": "^4.8.1"
+  }
+}

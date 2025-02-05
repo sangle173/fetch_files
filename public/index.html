@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Downloader</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="container mt-4">
+    <h2 class="mb-3">🔗 Fetch and Download Files</h2>
+
+    <div class="mb-3">
+        <input type="text" id="urlInput" class="form-control" placeholder="Enter URL to fetch files">
+        <button class="btn btn-primary mt-2" onclick="fetchFiles()">Fetch Files</button>
+    </div>
+
+    <div class="mb-3" id="filterContainer"></div>
+
+    <form id="downloadForm">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Select</th>
+                    <th>Filename</th>
+                    <th>Extension</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+            <tbody id="fileList"></tbody>
+        </table>
+        <button type="submit" class="btn btn-success">Download Selected Files</button>
+    </form>
+
+    <div class="progress mt-3" style="display: none;">
+        <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%;">0%</div>
+    </div>
+
+    <script>
+        let allFiles = [];
+        const socket = io();
+
+        async function fetchFiles() {
+            const url = document.getElementById("urlInput").value;
+            if (!url) return alert("Please enter a valid URL!");
+
+            const response = await fetch(`/fetch-files?url=${encodeURIComponent(url)}`);
+            allFiles = await response.json();
+
+            const fileList = document.getElementById("fileList");
+            fileList.innerHTML = "";
+
+            const extensions = new Set();
+
+            allFiles.forEach(file => {
+                fileList.innerHTML += `
+                    <tr data-ext="${file.ext}">
+                        <td><input type="checkbox" name="files" value="${file.link}"></td>
+                        <td>${file.name}</td>
+                        <td>${file.ext}</td>
+                        <td><a href="${file.link}" target="_blank">${file.link}</a></td>
+                    </tr>
+                `;
+                extensions.add(file.ext);
+            });
+
+            updateFilters([...extensions]);
+        }
+
+        function updateFilters(extensions) {
+            const filterContainer = document.getElementById("filterContainer");
+            filterContainer.innerHTML = '<b>Filter by extension:</b> ';
+
+            extensions.forEach(ext => {
+                filterContainer.innerHTML += `
+                    <label class="ms-2">
+                        <input type="checkbox" value="${ext}" checked onchange="applyFilters()"> ${ext}
+                    </label>
+                `;
+            });
+        }
+
+        function applyFilters() {
+            const checkedExtensions = [...document.querySelectorAll('#filterContainer input:checked')]
+                .map(input => input.value);
+
+            document.querySelectorAll("#fileList tr").forEach(row => {
+                row.style.display = checkedExtensions.includes(row.getAttribute("data-ext")) ? "" : "none";
+            });
+        }
+
+        document.getElementById("downloadForm").addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const selectedFiles = [...document.querySelectorAll('input[name="files"]:checked')].map(el => el.value);
+            if (selectedFiles.length === 0) return alert("No files selected!");
+
+            document.querySelector(".progress").style.display = "block";
+            updateProgress(0);
+
+            const response = await fetch("/download", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ files: selectedFiles })
+            });
+
+            const result = await response.json();
+            if (result.zipPath) {
+                window.location.href = `/download-zip?path=${encodeURIComponent(result.zipPath)}`;
+            } else {
+                alert("Error downloading files!");
+            }
+
+            document.querySelector(".progress").style.display = "none";
+        });
+
+        function updateProgress(percent) {
+            const progressBar = document.getElementById("progressBar");
+            progressBar.style.width = `${percent}%`;
+            progressBar.textContent = `${percent}%`;
+        }
+
+        socket.on("progressUpdate", (data) => {
+            updateProgress(data.progress);
+        });
+    </script>
+</body>
+</html>
