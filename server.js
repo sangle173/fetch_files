@@ -157,4 +157,15 @@ app.get("/download-zip", (req, res) => {
     });
 });
 
+
+app.get("/get-filters", (req, res) => {
+    try {
+        const filters = JSON.parse(fs.readFileSync("filters.json", "utf-8"));
+        res.json(filters);
+    } catch (error) {
+        console.error("Error reading filters.json:", error);
+        res.status(500).json({ error: "Failed to load filters" });
+    }
+});
+
 server.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));

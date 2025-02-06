@@ -1,0 +1,9 @@
+1. intall node js by click on node-v20.11.1-x64.msi
+2. install library
+    Run: npm install
+3. Start the server:
+    Run: node server.js
+4. Open the web app at http://localhost:3000/.
+5. Fetch files from a URL.
+6. Select a custom filter from the dropdown.
+7. Matching files should be automatically selected.

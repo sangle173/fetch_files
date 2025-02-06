@@ -1,0 +1,14 @@
+[
+    {
+      "name": "PineOTA",
+      "files": [
+        {"name": "*1-28.upd"},
+        {"name": "*1-38.upd"},
+        {"name": "*1-43.apex"},
+        {"name": "*1-43.apex.encrypted"},
+        {"name": "*pinewood.apex"},
+        {"name": "*pinewood.apex.encrypted"},
+        {"name": "*update.upm"}
+      ]
+    }
+  ]
